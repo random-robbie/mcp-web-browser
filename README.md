@@ -170,4 +170,4 @@ MIT License
 
 ## 💬 Support
 
-For issues and questions, please [open an issue](https://github.com/yourusername/mcp-web-browser/issues) on GitHub.
+For issues and questions, please [open an issue](https://github.com/random-robbie/mcp-web-browser/issues) on GitHub.
