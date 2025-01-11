@@ -148,7 +148,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/mcp-web-browser.git
+git clone https://github.com/random-robbie/mcp-web-browser.git
 
 # Create virtual environment
 python -m venv venv
