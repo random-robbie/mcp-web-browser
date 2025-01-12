@@ -2,6 +2,8 @@
 
 An advanced web browsing server for the Model Context Protocol (MCP) powered by Playwright, enabling headless browser interactions through a flexible, secure API.
 
+<a href="https://glama.ai/mcp/servers/lwqlaw6k6d"><img width="380" height="200" src="https://glama.ai/mcp/servers/lwqlaw6k6d/badge" alt="Web Browser Server MCP server" /></a>
+
 ## 🌐 Features
 
 - **Headless Web Browsing**: Navigate to any website with SSL certificate validation bypass
