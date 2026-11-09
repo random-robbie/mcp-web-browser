@@ -1,43 +1,40 @@
 # MCP Web Browser Server
 
-An advanced web browsing server for the Model Context Protocol (MCP) powered by Playwright, enabling headless browser interactions through a flexible, secure API.
+An advanced web browsing server for the Model Context Protocol (MCP) powered by Playwright, enabling headless browser interactions through a flexible API.
 
 <a href="https://glama.ai/mcp/servers/lwqlaw6k6d"><img width="380" height="200" src="https://glama.ai/mcp/servers/lwqlaw6k6d/badge" alt="Web Browser Server MCP server" /></a>
 
-## 🌐 Features
+## Features
 
 - **Headless Web Browsing**: Navigate to any website with SSL certificate validation bypass
 - **Full Page Content Extraction**: Retrieve complete HTML content, including dynamically loaded JavaScript
-- **Multi-Tab Support**: Create, manage, and switch between multiple browser tabs
-- **Advanced Web Interaction Tools**:
-  - Extract text content
+- **Text Extraction**: Extract all visible text or text from specific elements
+- **Web Interaction Tools**:
   - Click page elements
   - Input text into form fields
-  - Capture screenshots
-  - Extract page links with filtering capabilities
-  - Scroll pages in any direction
-  - Execute JavaScript on pages
-  - Refresh pages
-  - Wait for navigation to complete
-- **Resource Management**: Automatic cleanup of unused resources after inactivity
-- **Enhanced Page Information**: Get detailed metadata about the current page
+  - Capture screenshots (full page, viewport, or specific elements)
+  - Extract page links
+- **Resource Management**: Automatic cleanup of browser resources on shutdown
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 - Python 3.10+
-- MCP SDK
-- Playwright
+- Playwright (with Chromium installed)
 
 ### Installation
 
 ```bash
-# Install MCP and Playwright
-pip install mcp playwright
+# Clone the repository
+git clone https://github.com/random-robbie/mcp-web-browser.git
+cd mcp-web-browser
 
-# Install browser dependencies
-playwright install
+# Install the package and its dependencies (mcp[cli] and playwright)
+pip install -e .
+
+# Install the Chromium browser binary
+playwright install chromium
 ```
 
 ### Configuration for Claude Desktop
@@ -48,27 +45,37 @@ Add to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "web-browser": {
-      "command": "python",
-      "args": [
-        "/path/to/your/server.py"
-      ]
+      "command": "mcp-web-browser"
     }
   }
 }
 ```
 
-## 💡 Usage Examples
+Alternatively, you can run the server module directly:
+
+```json
+{
+  "mcpServers": {
+    "web-browser": {
+      "command": "python",
+      "args": ["-m", "mcp_web_browser.server"]
+    }
+  }
+}
+```
+
+## Usage Examples
 
 ### Basic Web Navigation
 
 ```python
-# Browse to a website
+# Browse to a website (returns the full page HTML)
 page_content = browse_to("https://example.com")
 
-# Extract page text
+# Extract all visible page text
 text_content = extract_text_content()
 
-# Extract text from a specific element
+# Extract text from specific elements
 title_text = extract_text_content("h1.title")
 ```
 
@@ -89,147 +96,71 @@ click_element("#login-button")
 ### Screenshot Capture
 
 ```python
-# Capture full page screenshot
+# Capture full page screenshot (returns base64-encoded PNG)
 full_page_screenshot = get_page_screenshots(full_page=True)
 
-# Capture specific element screenshot
+# Capture viewport only
+viewport_screenshot = get_page_screenshots()
+
+# Capture a specific element
 element_screenshot = get_page_screenshots(selector="#main-content")
 ```
 
 ### Link Extraction
 
 ```python
-# Get all links on the page
+# Get all links on the current page
 page_links = get_page_links()
-
-# Get links matching a pattern
-filtered_links = get_page_links(filter_pattern="contact")
 ```
 
-### Multi-Tab Browsing
+## Security Features
 
-```python
-# Create a new tab
-tab_id = create_new_tab("https://example.com")
+- SSL certificate validation bypass (`ignore_https_errors=True` on the browser context)
+- Browser resources closed and cleaned up on server shutdown
 
-# Create another tab
-another_tab_id = create_new_tab("https://example.org")
-
-# List all open tabs
-tabs = list_tabs()
-
-# Switch between tabs
-switch_tab(tab_id)
-
-# Close a tab
-close_tab(another_tab_id)
-```
-
-### Advanced Interactions
-
-```python
-# Scroll the page
-scroll_page(direction="down", amount="page")
-
-# Execute JavaScript on the page
-result = execute_javascript("return document.title")
-
-# Get detailed page information
-page_info = get_page_info()
-
-# Refresh the current page
-refresh_page()
-
-# Wait for navigation to complete
-wait_for_navigation(timeout_ms=5000)
-```
-
-## 🛡️ Security Features
-
-- SSL certificate validation bypass
-- Secure browser context management
-- Custom user-agent configuration
-- Error handling and comprehensive logging
-- Configurable timeout settings
-- CSP bypass control
-- Protection against cookie stealing
-
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
 - **SSL Certificate Errors**: Automatically bypassed
-- **Slow Page Load**: Adjust timeout in `browse_to()` method
-- **Element Not Found**: Verify selectors carefully
-- **Browser Resource Usage**: Auto-cleanup after inactivity period
+- **Slow Page Load**: `browse_to()` uses a fixed 30-second timeout and waits for `networkidle`
+- **Element Not Found**: Verify CSS selectors carefully; tools raise an error if no page is loaded, so call `browse_to()` first
 
 ### Logging
 
-All significant events are logged with detailed information for easy debugging.
+Significant events (navigation, extraction, errors, cleanup) are logged to stderr for easy debugging.
 
-## 📋 Tool Parameters
+## Tool Parameters
 
 ### `browse_to(url: str, context: Optional[Any] = None)`
-- `url`: Website to navigate to
-- `context`: Optional context object (currently unused)
+- `url`: Full URL to navigate to
+- `context`: Optional context object (ignored)
+- Returns the full HTML content of the page
 
 ### `extract_text_content(selector: Optional[str] = None, context: Optional[Any] = None)`
-- `selector`: Optional CSS selector to extract specific content
-- `context`: Optional context object (currently unused)
+- `selector`: Optional CSS selector to extract text from matching elements
+- `context`: Optional context object (ignored)
 
 ### `click_element(selector: str, context: Optional[Any] = None)`
 - `selector`: CSS selector of the element to click
-- `context`: Optional context object (currently unused)
+- `context`: Optional context object (ignored)
 
 ### `get_page_screenshots(full_page: bool = False, selector: Optional[str] = None, context: Optional[Any] = None)`
-- `full_page`: Capture entire page screenshot
-- `selector`: Optional element to screenshot
-- `context`: Optional context object (currently unused)
+- `full_page`: Capture the entire page rather than just the viewport
+- `selector`: Optional CSS selector to screenshot a specific element
+- `context`: Optional context object (ignored)
+- Returns a base64-encoded screenshot image
 
-### `get_page_links(filter_pattern: Optional[str] = None, context: Optional[Any] = None)`
-- `filter_pattern`: Optional text pattern to filter links
-- `context`: Optional context object (currently unused)
+### `get_page_links(context: Optional[Any] = None)`
+- `context`: Optional context object (ignored)
+- Returns a list of all links found on the page
 
 ### `input_text(selector: str, text: str, context: Optional[Any] = None)`
-- `selector`: CSS selector of input element
+- `selector`: CSS selector of the input element
 - `text`: Text to input
-- `context`: Optional context object (currently unused)
+- `context`: Optional context object (ignored)
 
-### `create_new_tab(url: Optional[str] = None, context: Optional[Any] = None)`
-- `url`: Optional URL to navigate to in the new tab
-- `context`: Optional context object (currently unused)
-
-### `switch_tab(tab_id: str, context: Optional[Any] = None)`
-- `tab_id`: ID of the tab to switch to
-- `context`: Optional context object (currently unused)
-
-### `list_tabs(context: Optional[Any] = None)`
-- `context`: Optional context object (currently unused)
-
-### `close_tab(tab_id: Optional[str] = None, context: Optional[Any] = None)`
-- `tab_id`: Optional ID of the tab to close (defaults to current tab)
-- `context`: Optional context object (currently unused)
-
-### `refresh_page(context: Optional[Any] = None)`
-- `context`: Optional context object (currently unused)
-
-### `get_page_info(context: Optional[Any] = None)`
-- `context`: Optional context object (currently unused)
-
-### `scroll_page(direction: str = "down", amount: str = "page", context: Optional[Any] = None)`
-- `direction`: Direction to scroll ('up', 'down', 'left', 'right')
-- `amount`: Amount to scroll ('page', 'half', or a number)
-- `context`: Optional context object (currently unused)
-
-### `wait_for_navigation(timeout_ms: int = 10000, context: Optional[Any] = None)`
-- `timeout_ms`: Maximum time to wait in milliseconds
-- `context`: Optional context object (currently unused)
-
-### `execute_javascript(script: str, context: Optional[Any] = None)`
-- `script`: JavaScript code to execute
-- `context`: Optional context object (currently unused)
-
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -247,16 +178,20 @@ source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 pip install -e .[dev]
 ```
 
-## 📄 License
+## License
 
 MIT License
 
-## 🔗 Related Projects
+## Related Projects
 
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [Playwright](https://playwright.dev)
 - [Claude Desktop](https://claude.ai/desktop)
 
-## 💬 Support
+## Support
 
 For issues and questions, please [open an issue](https://github.com/random-robbie/mcp-web-browser/issues) on GitHub.
+
+## Author
+
+Robbie Wiggins — [What-Security](https://www.what-security.co.uk) · [GitHub](https://github.com/random-robbie)
