@@ -198,7 +198,7 @@ async def click_element(
 async def get_page_screenshots(
     full_page: bool = False,
     selector: str | None = None
-) -> str:
+):
     """
     Capture screenshot of the current page.
 
