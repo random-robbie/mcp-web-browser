@@ -96,7 +96,7 @@ click_element("#login-button")
 ### Screenshot Capture
 
 ```python
-# Capture full page screenshot (returns base64-encoded PNG)
+# Capture full page screenshot (returns PNG image content)
 full_page_screenshot = get_page_screenshots(full_page=True)
 
 # Capture viewport only
@@ -132,33 +132,27 @@ Significant events (navigation, extraction, errors, cleanup) are logged to stder
 
 ## Tool Parameters
 
-### `browse_to(url: str, context: Optional[Any] = None)`
+### `browse_to(url: str)`
 - `url`: Full URL to navigate to
-- `context`: Optional context object (ignored)
 - Returns the full HTML content of the page
 
-### `extract_text_content(selector: Optional[str] = None, context: Optional[Any] = None)`
+### `extract_text_content(selector: Optional[str] = None)`
 - `selector`: Optional CSS selector to extract text from matching elements
-- `context`: Optional context object (ignored)
 
-### `click_element(selector: str, context: Optional[Any] = None)`
+### `click_element(selector: str)`
 - `selector`: CSS selector of the element to click
-- `context`: Optional context object (ignored)
 
-### `get_page_screenshots(full_page: bool = False, selector: Optional[str] = None, context: Optional[Any] = None)`
+### `get_page_screenshots(full_page: bool = False, selector: Optional[str] = None)`
 - `full_page`: Capture the entire page rather than just the viewport
 - `selector`: Optional CSS selector to screenshot a specific element
-- `context`: Optional context object (ignored)
-- Returns a base64-encoded screenshot image
+- Returns the screenshot as PNG image content
 
-### `get_page_links(context: Optional[Any] = None)`
-- `context`: Optional context object (ignored)
+### `get_page_links()`
 - Returns a list of all links found on the page
 
-### `input_text(selector: str, text: str, context: Optional[Any] = None)`
+### `input_text(selector: str, text: str)`
 - `selector`: CSS selector of the input element
 - `text`: Text to input
-- `context`: Optional context object (ignored)
 
 ## Contributing
 
