@@ -116,6 +116,8 @@ page_links = get_page_links()
 ## Security Features
 
 - SSL certificate validation bypass (`ignore_https_errors=True` on the browser context)
+- Configurable via environment variables: `MCP_BROWSER_UA` (custom User-Agent)
+  and `MCP_BROWSER_VIEWPORT` (e.g. `1920x1080`)
 - Browser resources closed and cleaned up on server shutdown
 
 ## Troubleshooting
@@ -132,9 +134,11 @@ Significant events (navigation, extraction, errors, cleanup) are logged to stder
 
 ## Tool Parameters
 
-### `browse_to(url: str)`
+### `browse_to(url: str, mode: str = "text")`
 - `url`: Full URL to navigate to
-- Returns the full HTML content of the page
+- `mode`: `"text"` (default) returns the visible page text — cheaper for LLM
+  use; `"html"` returns the full HTML content
+- Returns the page content plus the current URL and page title
 
 ### `extract_text_content(selector: Optional[str] = None)`
 - `selector`: Optional CSS selector to extract text from matching elements
@@ -148,11 +152,26 @@ Significant events (navigation, extraction, errors, cleanup) are logged to stder
 - Returns the screenshot as PNG image content
 
 ### `get_page_links()`
-- Returns a list of all links found on the page
+- Returns a list of `{"text": label, "href": absolute URL}` objects
 
 ### `input_text(selector: str, text: str)`
 - `selector`: CSS selector of the input element
 - `text`: Text to input
+
+### `press_key(selector: str, key: str)`
+- `selector`: CSS selector of the element to focus
+- `key`: Key to press, e.g. `"Enter"` to submit a form, `"Escape"`, `"Tab"`
+- Returns a confirmation plus the current URL and title (a key press may
+  trigger navigation)
+
+### `select_option(selector: str, values: str | list[str])`
+- `selector`: CSS selector of the `<select>` dropdown
+- `values`: Value or label to select (or a list for multi-select)
+- Returns a confirmation plus the current URL and title
+
+`click_element`, `input_text`, `press_key` and `select_option` all append the
+current page URL and title to their result, so an agent can see where an
+action landed.
 
 ## Contributing
 

@@ -13,6 +13,8 @@ EXPECTED_TOOLS = {
     "get_page_screenshots",
     "get_page_links",
     "input_text",
+    "press_key",
+    "select_option",
 }
 
 
@@ -38,6 +40,8 @@ def test_tool_schemas_have_no_context_parameter():
         ("get_page_links", []),
         ("extract_text_content", []),
         ("get_page_screenshots", []),
+        ("press_key", ["selector", "key"]),
+        ("select_option", ["selector", "values"]),
     ],
 )
 def test_required_parameters(name, required):

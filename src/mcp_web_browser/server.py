@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 
 from mcp.server.mcpserver import Image, MCPServer
@@ -28,9 +29,17 @@ async def _ensure_browser():
         _browser = await _playwright_instance.chromium.launch()
 
         # Create a browser context that ignores HTTPS errors
-        _browser_context = await _browser.new_context(
-            ignore_https_errors=True,  # Ignore SSL certificate errors
-        )
+        context_kwargs: dict = {
+            "ignore_https_errors": True,  # Ignore SSL certificate errors
+        }
+        user_agent = os.environ.get("MCP_BROWSER_UA")
+        if user_agent:
+            context_kwargs["user_agent"] = user_agent
+        viewport = os.environ.get("MCP_BROWSER_VIEWPORT")
+        if viewport:
+            width, _, height = viewport.lower().partition("x")
+            context_kwargs["viewport"] = {"width": int(width), "height": int(height)}
+        _browser_context = await _browser.new_context(**context_kwargs)
     return _browser, _browser_context
 
 async def _close_current_page():
@@ -42,6 +51,15 @@ async def _close_current_page():
         except Exception:
             pass
         _current_page = None
+
+async def _page_summary() -> str:
+    """Return the current URL and title so agents can see where an action landed."""
+    if not _current_page:
+        return ""
+    try:
+        return f" [page: {_current_page.url} | {await _current_page.title()}]"
+    except Exception:
+        return ""
 
 async def _safe_cleanup():
     """Safely clean up browser resources"""
@@ -82,15 +100,17 @@ async def _safe_cleanup():
         _playwright_instance = None
 
 @mcp.tool()
-async def browse_to(url: str) -> str:
+async def browse_to(url: str, mode: str = "text") -> str:
     """
-    Navigate to a specific URL and return the page's HTML content.
+    Navigate to a specific URL and return the page's text or HTML content.
 
     Args:
         url: The full URL to navigate to
+        mode: "text" returns the visible text of the page (default, cheaper
+            for LLM use); "html" returns the full HTML content
 
     Returns:
-        The full HTML content of the page
+        The page content in the requested mode, plus the current URL and title
     """
     global _current_page, _browser, _browser_context
 
@@ -113,7 +133,12 @@ async def browse_to(url: str) -> str:
         )
 
         # Get full page content including dynamically loaded JavaScript
-        page_content = await _current_page.content()
+        if mode == "text":
+            page_content = await _current_page.inner_text("body")
+        elif mode == "html":
+            page_content = await _current_page.content()
+        else:
+            raise ToolError(f"unknown mode {mode!r}: use 'text' or 'html'")
 
         # Optional: extract additional metadata
         try:
@@ -122,7 +147,7 @@ async def browse_to(url: str) -> str:
         except Exception:
             pass
 
-        return page_content
+        return page_content + await _page_summary()
 
     except Exception as e:
         print(f"Error navigating to {url}: {e}", file=sys.stderr)
@@ -232,14 +257,12 @@ async def get_page_screenshots(
         raise ToolError(f"Error capturing screenshot: {e}")
 
 @mcp.tool()
-async def get_page_links() -> list[str]:
+async def get_page_links() -> list[dict[str, str]]:
     """
-    Extract all links from the current page.
-
-    Args:
+    Extract all links from the current page with their labels.
 
     Returns:
-        List of links found on the page
+        List of {"text": link label, "href": absolute URL} objects
     """
     global _current_page
 
@@ -247,11 +270,14 @@ async def get_page_links() -> list[str]:
         raise ToolError("No page is currently loaded. Use browse_to first.")
 
     try:
-        # Use JavaScript to extract all links
+        # Use JavaScript to extract links with their labels
         links = await _current_page.evaluate("""
             () => {
                 const links = document.querySelectorAll('a');
-                return Array.from(links).map(link => link.href);
+                return Array.from(links).map(link => ({
+                    text: (link.textContent || '').trim(),
+                    href: link.href,
+                }));
             }
         """)
 
@@ -292,11 +318,83 @@ async def input_text(
 
         print(f"Input text into element: {selector}", file=sys.stderr)
 
-        return f"Successfully input text into element: {selector}"
+        return f"Successfully input text into element: {selector}" + await _page_summary()
 
     except Exception as e:
         print(f"Error inputting text: {e}", file=sys.stderr)
         raise ToolError(f"Error inputting text: {e}")
+
+@mcp.tool()
+async def press_key(selector: str, key: str) -> str:
+    """
+    Focus an element and press a keyboard key on it, e.g. "Enter" to submit
+    a form, "Escape", "Tab", "ArrowDown". Use this to submit search boxes and
+    forms that submit on Enter.
+
+    Args:
+        selector: CSS selector of the element to focus
+        key: Key name as accepted by Playwright, e.g. "Enter", "Tab", "Escape"
+
+    Returns:
+        Confirmation message plus the current page URL and title (the key
+        press may trigger navigation)
+    """
+    global _current_page
+
+    if not _current_page:
+        raise ToolError("No page is currently loaded. Use browse_to first.")
+
+    try:
+        element = await _current_page.query_selector(selector)
+        if not element:
+            raise ToolError(f"No element found with selector: {selector}")
+
+        await element.press(key)
+
+        print(f"Pressed {key} on element: {selector}", file=sys.stderr)
+
+        return f"Successfully pressed {key} on element: {selector}" + await _page_summary()
+
+    except ToolError:
+        raise
+    except Exception as e:
+        print(f"Error pressing key: {e}", file=sys.stderr)
+        raise ToolError(f"Error pressing key: {e}")
+
+@mcp.tool()
+async def select_option(selector: str, values: str | list[str]) -> str:
+    """
+    Select one or more options in a <select> dropdown element. Options are
+    matched by value or label.
+
+    Args:
+        selector: CSS selector of the <select> element
+        values: A single value/label or a list of values/labels to select
+
+    Returns:
+        Confirmation message plus the current page URL and title
+    """
+    global _current_page
+
+    if not _current_page:
+        raise ToolError("No page is currently loaded. Use browse_to first.")
+
+    try:
+        element = await _current_page.query_selector(selector)
+        if not element:
+            raise ToolError(f"No element found with selector: {selector}")
+
+        selected = await element.select_option(values)
+
+        print(f"Selected options in element: {selector}", file=sys.stderr)
+
+        return f"Successfully selected options in element: {selector} ({len(selected)} selected)" + await _page_summary()
+
+    except ToolError:
+        raise
+    except Exception as e:
+        print(f"Error selecting options: {e}", file=sys.stderr)
+        raise ToolError(f"Error selecting options: {e}")
 
 def main():
     try:

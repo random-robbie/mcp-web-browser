@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0
+
+- `browse_to` gains a `mode` parameter: `"text"` (new default) returns the
+  visible page text instead of full HTML — pass `"html"` for the old
+  behaviour. Results now include the current URL and title.
+- New `press_key` tool: focus an element and press a key ("Enter" submits
+  forms that have no clickable button).
+- New `select_option` tool: pick options in `<select>` dropdowns.
+- `click_element`, `input_text`, `press_key` and `select_option` append the
+  current page URL and title to their results, so agents can see where an
+  action landed.
+- `get_page_links` now returns `{"text", "href"}` objects instead of bare
+  hrefs.
+- User-Agent and viewport configurable via `MCP_BROWSER_UA` and
+  `MCP_BROWSER_VIEWPORT` environment variables.
+
 ## 0.3.0
 
 - Migrated to the mcp 2.x SDK: `FastMCP` is now `MCPServer`
