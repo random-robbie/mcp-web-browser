@@ -4,13 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-web-browser"
-version = "0.2.0"
+version = "0.3.0"
 description = "MCP Web Browser Server using Playwright"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    # mcp 2.x renamed FastMCP to MCPServer; migrate before unpinning.
-    "mcp[cli]>=1.9,<2",
+    "mcp[cli]>=2,<3",
     "playwright>=1.49,<2",
 ]
 

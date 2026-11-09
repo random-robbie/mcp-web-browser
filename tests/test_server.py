@@ -25,7 +25,7 @@ def test_six_tools_registered():
 def test_tool_schemas_have_no_context_parameter():
     tools = asyncio.run(mcp.list_tools())
     for tool in tools:
-        props = tool.inputSchema.get("properties", {})
+        props = tool.input_schema.get("properties", {})
         assert "context" not in props, f"{tool.name} still exposes a context parameter"
 
 
@@ -43,4 +43,4 @@ def test_tool_schemas_have_no_context_parameter():
 def test_required_parameters(name, required):
     tools = asyncio.run(mcp.list_tools())
     tool = next(t for t in tools if t.name == name)
-    assert tool.inputSchema.get("required", []) == required
+    assert tool.input_schema.get("required", []) == required

@@ -1,11 +1,11 @@
 import asyncio
 import sys
 
-from mcp.server import FastMCP
-from mcp.server.fastmcp import Image
+from mcp.server.mcpserver import Image, MCPServer
+from mcp.server.mcpserver.tools.base import ToolError
 
 # Create an MCP server for web browsing
-mcp = FastMCP("Web Browser")
+mcp = MCPServer("Web Browser")
 
 # Global browser and page management
 _browser = None
@@ -144,7 +144,7 @@ async def extract_text_content(
     global _current_page
 
     if not _current_page:
-        raise ValueError("No page is currently loaded. Use browse_to first.")
+        raise ToolError("No page is currently loaded. Use browse_to first.")
 
     try:
         if selector:
@@ -160,7 +160,7 @@ async def extract_text_content(
 
     except Exception as e:
         print(f"Error extracting text: {e}", file=sys.stderr)
-        raise ValueError(f"Error extracting text: {e}")
+        raise ToolError(f"Error extracting text: {e}")
 
 @mcp.tool()
 async def click_element(
@@ -178,12 +178,12 @@ async def click_element(
     global _current_page
 
     if not _current_page:
-        raise ValueError("No page is currently loaded. Use browse_to first.")
+        raise ToolError("No page is currently loaded. Use browse_to first.")
 
     try:
         element = await _current_page.query_selector(selector)
         if not element:
-            raise ValueError(f"No element found with selector: {selector}")
+            raise ToolError(f"No element found with selector: {selector}")
 
         await element.click()
         print(f"Clicked element: {selector}", file=sys.stderr)
@@ -192,7 +192,7 @@ async def click_element(
 
     except Exception as e:
         print(f"Error clicking element: {e}", file=sys.stderr)
-        raise ValueError(f"Error clicking element: {e}")
+        raise ToolError(f"Error clicking element: {e}")
 
 @mcp.tool()
 async def get_page_screenshots(
@@ -212,13 +212,13 @@ async def get_page_screenshots(
     global _current_page
 
     if not _current_page:
-        raise ValueError("No page is currently loaded. Use browse_to first.")
+        raise ToolError("No page is currently loaded. Use browse_to first.")
 
     try:
         if selector:
             element = await _current_page.query_selector(selector)
             if not element:
-                raise ValueError(f"No element found with selector: {selector}")
+                raise ToolError(f"No element found with selector: {selector}")
             screenshot_bytes = await element.screenshot()
         else:
             screenshot_bytes = await _current_page.screenshot(full_page=full_page)
@@ -229,7 +229,7 @@ async def get_page_screenshots(
 
     except Exception as e:
         print(f"Error capturing screenshot: {e}", file=sys.stderr)
-        raise ValueError(f"Error capturing screenshot: {e}")
+        raise ToolError(f"Error capturing screenshot: {e}")
 
 @mcp.tool()
 async def get_page_links() -> list[str]:
@@ -244,7 +244,7 @@ async def get_page_links() -> list[str]:
     global _current_page
 
     if not _current_page:
-        raise ValueError("No page is currently loaded. Use browse_to first.")
+        raise ToolError("No page is currently loaded. Use browse_to first.")
 
     try:
         # Use JavaScript to extract all links
@@ -261,7 +261,7 @@ async def get_page_links() -> list[str]:
 
     except Exception as e:
         print(f"Error extracting links: {e}", file=sys.stderr)
-        raise ValueError(f"Error extracting links: {e}")
+        raise ToolError(f"Error extracting links: {e}")
 
 @mcp.tool()
 async def input_text(
@@ -281,12 +281,12 @@ async def input_text(
     global _current_page
 
     if not _current_page:
-        raise ValueError("No page is currently loaded. Use browse_to first.")
+        raise ToolError("No page is currently loaded. Use browse_to first.")
 
     try:
         element = await _current_page.query_selector(selector)
         if not element:
-            raise ValueError(f"No element found with selector: {selector}")
+            raise ToolError(f"No element found with selector: {selector}")
 
         await element.fill(text)
 
@@ -296,7 +296,7 @@ async def input_text(
 
     except Exception as e:
         print(f"Error inputting text: {e}", file=sys.stderr)
-        raise ValueError(f"Error inputting text: {e}")
+        raise ToolError(f"Error inputting text: {e}")
 
 def main():
     try:

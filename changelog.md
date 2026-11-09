@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+- Migrated to the mcp 2.x SDK: `FastMCP` is now `MCPServer`
+  (`from mcp.server.mcpserver import MCPServer`), dependency updated to
+  `mcp[cli]>=2,<3`.
+- Tool errors are raised as `ToolError`, which the 2.x SDK surfaces as proper
+  `CallToolResult(is_error=True)` results — the v1 behaviour, verified over a
+  live stdio session.
+- `Tool.inputSchema` renamed to `input_schema` in the SDK; tests updated.
+- Verified end-to-end over stdio: initialize, list_tools and call_tool error
+  handling against the 2.3.0 client.
+
 ## 0.2.0
 
 - Removed the phantom `context` parameter from every tool signature and schema.
